@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <link rel="stylesheet" type="text/css" href="css/main.css">
+</head>
+
+<body>
+    <script type="text/javascript" src="js/table.js"></script>
+    <script type="text/javascript" src="js/three.js"></script>
+    <script type="text/javascript" src="js/Tween.js"></script>
+    <script type="text/javascript" src="js/CSS3DRenderer.js"></script>
+    <script type="text/javascript" src="js/TrackballControls.js"></script>
+    <div id="container"></div>
+    <div id="menu">
+        <button id="table">TABLE</button>
+        <button id="sphere">SPHERE</button>
+        <button id="helix">HELIX</button>
+        <button id="grid">GRID</button>
+    </div>
+    <script>
+    let targets = { table: [], sphere: [], helix: [], grid: [] };
+    let objects = [];
+
+    let scene = new THREE.Scene();
+    let camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 10000);
+    camera.position.z = 3000;
+
+    let renderer = new THREE.CSS3DRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.domElement.style.position = 'absolute';
+    document.getElementById('container').appendChild(renderer.domElement);
+
+    for (i = 0; i < table.length; i += 5) {
+
+        let element = document.createElement('div');
+        element.className = 'element';
+        element.style.backgroundColor = 'rgba(15,150,10,' + (Math.random() * 0.5 + 0.25) + ')';
+
+        let number = document.createElement('div');
+        number.className = 'number';
+        number.textContent = (i / 5) + 1;
+        element.appendChild(number);
+
+        let symbol = document.createElement('div');
+        symbol.className = 'symbol';
+        symbol.textContent = table[i];
+        element.appendChild(symbol);
+
+        let details = document.createElement('div');
+        details.className = 'details';
+        details.innerHTML = table[i + 1] + '<br>' + table[i + 2];
+        element.appendChild(details);
+
+        let object = new THREE.CSS3DObject(element);
+        object.position.x = Math.random() * 4000 - 2000;
+        object.position.y = Math.random() * 4000 - 2000;
+        object.position.z = Math.random() * 4000 - 2000;
+        scene.add(object);
+        objects.push(object);
+    }
+
+    //Interactivity
+    let controls = new THREE.TrackballControls(camera, renderer.domElement);
+    controls.rotateSpeed = 0.5;
+    controls.minDistance = 500;
+    controls.maxDistance = 6000;
+    controls.addEventListener('change', render);
+
+
+
+    //Creating markup for table
+    let l = objects.length;    
+    for (i = 0; i < table.length; i += 5) {
+        let object = new THREE.Object3D();
+        object.position.x = (table[i + 3] * 140) - 1260;
+        object.position.y = -(table[i + 4] * 180) + 990;
+        targets.table.push(object);
+    }
+
+    //Creating markup for sphere
+    let vectorSphere = new THREE.Vector3();
+    for (i = 0; i < l; i++) {
+        let phi = Math.acos(-1 + (2 * i) / l);
+        let theta = Math.sqrt(l * Math.PI) * phi;
+
+        let object = new THREE.Object3D();
+
+        object.position.x = 800 * Math.cos(theta) * Math.sin(phi);
+        object.position.y = 800 * Math.sin(theta) * Math.sin(phi);
+        object.position.z = 800 * Math.cos(phi);
+
+        vectorSphere.copy(object.position).multiplyScalar(2);
+        object.lookAt(vectorSphere);
+        targets.sphere.push(object);
+    }
+
+    //Creating markup for helix
+    let vectorHelix = new THREE.Vector3();
+    for (i = 0; i < l; i++) {
+
+        let phi = i * 0.175 + Math.PI;
+
+        let object = new THREE.Object3D();
+
+        object.position.x = 900 * Math.sin(phi);
+        object.position.y = -(i * 8) + 450;
+        object.position.z = 900 * Math.cos(phi);
+
+        vectorHelix.x = object.position.x * 2;
+        vectorHelix.y = object.position.y;
+        vectorHelix.z = object.position.z * 2;
+
+        object.lookAt(vectorHelix);
+
+        targets.helix.push(object);
+    }
+
+    //Creating markup for grid
+    for (i = 0; i < l; i++) {
+        let object = new THREE.Object3D();
+
+        object.position.x = ((i % 5) * 400) - 800;
+        object.position.y = (-(Math.floor(i / 5) % 5) * 400) + 800;
+        object.position.z = (Math.floor(i / 25)) * 1000 - 2000;
+
+        targets.grid.push(object);
+    }
+
+
+
+    //Buttons
+    let tableButton = document.getElementById('table');
+    tableButton.addEventListener('click', (e) => {
+        transform(targets.table, 2000);
+    });
+
+    let sphereButton = document.getElementById('sphere');
+    sphereButton.addEventListener('click', (e) => {
+        transform(targets.sphere, 2000);
+    });
+
+    let helixButton = document.getElementById('helix');
+    helixButton.addEventListener('click', (e) => {
+        transform(targets.helix, 2000);
+    });
+
+    let gridButton = document.getElementById('grid');
+    gridButton.addEventListener('click', (e) => {
+        transform(targets.grid, 2000);
+    });
+
+
+    //Making project adaptive
+    window.addEventListener('resize', () => {
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        renderer.setSize(width, height);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+    });
+
+
+    //Additional functions
+    function transform(targets, duration) {
+        TWEEN.removeAll();
+
+        for (i = 0; i < objects.length; i++) {
+            let object = objects[i];
+            let target = targets[i];
+
+            new TWEEN.Tween(object.position)
+                .to({ x: target.position.x, y: target.position.y, z: target.position.z }, Math.random() * duration + duration)
+                .easing(TWEEN.Easing.Exponential.InOut)
+                .start();
+
+            new TWEEN.Tween(object.rotation)
+                .to({ x: target.rotation.x, y: target.rotation.y, z: target.rotation.z }, Math.random() * duration + duration)
+                .easing(TWEEN.Easing.Exponential.InOut)
+                .start();
+        }
+
+        new TWEEN.Tween(this)
+            .to({}, duration * 2)
+            .onUpdate(render)
+            .start();
+    }
+
+    //Animation logic functions
+    function render() {
+        renderer.render(scene, camera);
+    };
+
+    function gameLoop() {
+        requestAnimationFrame(gameLoop)
+        controls.update();
+        TWEEN.update();
+        render();
+    };
+
+    //Initialize all
+    gameLoop();
+    </script>
+</body>
+<script type="text/javascript" src="js/main.js"></script>
+
+</html>
